@@ -6,5 +6,6 @@ pub enum Cmd {
   // your custom commands
   // multiple arguments are allowed
   // note that rename_all = "camelCase": you need to use "myCustomCommand" on JS
-  MyCustomCommand { argument: String },
+  Crop { image: String, callback: String, x: u32, y: u32, width: u32, height: u32, error: String },
+  Tint { image: String, callback: String, r: u8, g: u8, b: u8, error: String }
 }
