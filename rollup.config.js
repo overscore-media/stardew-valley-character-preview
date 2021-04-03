@@ -1,4 +1,6 @@
 import svelte from 'rollup-plugin-svelte';
+//import sveltePreprocess from 'svelte-preprocess'
+
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
@@ -44,7 +46,8 @@ export default {
 			compilerOptions: {
 				// enable run-time checks when not in production
 				dev: !production
-			}
+			},
+			//preprocess: sveltePreprocess()
 		}),
 		// we'll extract any component CSS out into
 		// a separate file - better for performance

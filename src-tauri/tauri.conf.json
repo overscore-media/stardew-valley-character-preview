@@ -43,9 +43,9 @@
       "all": true
     },
     "window": {
-      "title": "Stardew Character Creator",
-      "width": 800,
-      "height": 600,
+      "title": "Stardew Valley Character Preview",
+      "width": 815,
+      "height": 615,
       "resizable": true,
       "fullscreen": false
     },

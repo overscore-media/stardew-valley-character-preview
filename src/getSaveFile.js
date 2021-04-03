@@ -17,12 +17,16 @@ export async function getSaveFile() {
     pantsColor = `rgba(${player.pantsColor.R}, ${player.pantsColor.G}, ${player.pantsColor.B}, ${player.pantsColor.A / 255})`
   }
 
+  console.dir(player)
+
   return {
     // Cosmetic Items
     accessory: player.accessory,
     hat: player.hat,
-    shirt: player.shirtItem,
+    shirtItem: player.shirtItem,
+    shirt: player.shirt,
     shirtColor: shirtColor,
+    pantsItem: player.pantsItem,
     pants: player.pants,
     pantsColor: pantsColor,
     boots: player.boots,
@@ -39,6 +43,7 @@ export async function getSaveFile() {
     name: player.name,
     gameVersion: player.gameVersion,
     gender: player.isMale ? "Male" : "Female",
+    saveFilePath: saveFilePath
   };
 }
 
