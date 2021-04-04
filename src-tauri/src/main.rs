@@ -7,17 +7,12 @@ use image::{DynamicImage, LumaA, Pixel, Rgba};
 
 use imageproc::map::map_colors;
 
+use css_color_parser::Color as CssColor;
+
 use serde::Serialize;
 
 #[derive(Serialize)]
-struct CropResponse {
-  value: String,
-  callback: String,
-  error: String
-}
-
-#[derive(Serialize)]
-struct TintResponse {
+struct CmdResponse {
   value: String,
   callback: String,
   error: String
@@ -45,6 +40,22 @@ impl<'a> std::error::Error for CommandError<'a> {}
 
 pub fn tint(gray: LumaA<u8>, color: Rgba<u8>) -> Rgba<u8> {
   Rgba([((gray[0] as u32 * color.channels()[0] as u32) / 255u32) as u8, ((gray[0] as u32 * color.channels()[3] as u32) / 255u32) as u8, ((gray[0] as u32 * color.channels()[2] as u32) / 255u32) as u8, (std::cmp::min(gray[0], 1) * 255u8) as u8])
+}
+
+pub fn skin_colour_swap(pixel: Rgba<u8>, colour_1: CssColor, colour_2: CssColor, colour_3: CssColor) -> Rgba<u8> {
+  let default_1 = Rgba([249u8, 174u8, 137u8, 255u8]);
+  let default_2 = Rgba([224u8, 107u8, 101u8, 255u8]);
+  let default_3 = Rgba([107u8, 0u8, 58u8, 255u8]);
+
+  if pixel.eq(&default_1) {
+    Rgba([colour_1.r, colour_1.g, colour_1.b, (colour_1.a * 255f32) as u8])
+  } else if pixel.eq(&default_2) {
+    Rgba([colour_2.r, colour_2.g, colour_2.b, (colour_2.a * 255f32) as u8])
+  } else if pixel.eq(&default_3) {
+    Rgba([colour_3.r, colour_3.g, colour_3.b, (colour_3.a * 255f32) as u8])
+  } else {
+    pixel
+  }
 }
 
 mod cmd;
@@ -75,7 +86,7 @@ fn main() {
               if image_encoded.len() > 0 {
               let image_processed = &image_encoded;
 
-              let response = CropResponse {
+              let response = CmdResponse {
                 value: image_processed.to_string(),
                 callback: "callback".to_string(),
                 error: "error".to_string()
@@ -108,7 +119,7 @@ fn main() {
             if image_encoded.len() > 0 {
             let image_processed = &image_encoded;
 
-            let response = CropResponse {
+            let response = CmdResponse {
               value: image_processed.to_string(),
               callback: "callback".to_string(),
               error: "error".to_string()
@@ -123,6 +134,43 @@ fn main() {
           callback,
           error,
         ),
+
+        SwapSkinColours { image, new_colours, callback, error } => tauri::execute_promise(_webview, move || {
+          let image_string = String::from(&image);
+          let image_decoded = base64::decode(&image_string).unwrap();
+          let image_loaded = image::load_from_memory(&image_decoded).unwrap();
+          let image_rgba = image_loaded.to_rgba8();
+
+          let colour_1 = new_colours[2].parse::<CssColor>().unwrap();
+          let colour_2 = new_colours[1].parse::<CssColor>().unwrap();
+          let colour_3 = new_colours[0].parse::<CssColor>().unwrap();
+
+          let image_colour_swapped = map_colors(&image_rgba, |pix| skin_colour_swap(pix, colour_1, colour_2, colour_3) );
+          let image_swapped_dynamic = DynamicImage::ImageRgba8(image_colour_swapped);
+
+          let mut write_buffer = vec![];
+          image_swapped_dynamic.write_to(&mut write_buffer, image::ImageOutputFormat::Png).unwrap();
+          let image_encoded = base64::encode(&write_buffer);
+
+
+          if image_encoded.len() > 0 {
+          let image_processed = &image_encoded;
+
+          let response = CmdResponse {
+            value: image_processed.to_string(),
+            callback: "callback".to_string(),
+            error: "error".to_string()
+          };
+
+          Ok(response)
+        } else {
+          Err(CommandError::new("could not read image").into())
+        }
+
+        },
+        callback,
+        error,
+      ),
           }
           Ok(())
         }

@@ -1,4 +1,5 @@
 import { Base64 } from "js-base64";
+import chroma from 'chroma-js'
 
 export async function cropImage(imageBase64, x, y, width, height) {
   let croppedImage = window.__TAURI__.tauri
@@ -37,6 +38,23 @@ export async function tintImage(imageBase64, r, g, b) {
     });
 
   return tintedImage;
+}
+
+export async function swapSkinColours(imageBase64, new_colours) {
+  let swapped_image = window.__TAURI__.tauri.promisified({
+    cmd: "swapSkinColours",
+    image: imageBase64.substring(22),
+    new_colours: new_colours
+  })
+    .then((response) => {
+      return `data:image/png;base64,${response.value}`;
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+
+
+  return swapped_image
 }
 
 export function generateSpriteDataUri(spriteBinaryArray) {
