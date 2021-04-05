@@ -1,13 +1,20 @@
 import txml from "txml";
 import BigNumber from "bignumber.js";
 
-export async function getSaveFile() {
-  const saveFilePath = await window.__TAURI__.dialog.open();
+export async function getSaveFile(current_path) {
+  let saveFilePath
+  
+  if (!current_path) {
+    saveFilePath = await window.__TAURI__.dialog.open();
+  } else {
+    saveFilePath = current_path
+  }
+
   const saveFileXML = await window.__TAURI__.fs.readTextFile(saveFilePath);
   const saveFile = filterParsedXML(txml.parse(saveFileXML), "SaveGame");
   const player = saveFile.player;
 
-  let shirtColor, pantsColor = 0
+  let shirtColor, pantsColor
 
   if (player.shirtColor) {
     shirtColor = `rgba(${player.shirtColor.R}, ${player.shirtColor.G}, ${player.shirtColor.B}, ${player.shirtColor.A / 255})`

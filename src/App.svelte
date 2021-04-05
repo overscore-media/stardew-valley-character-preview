@@ -1,6 +1,8 @@
 <script>
   import { createEventDispatcher } from "svelte";
   import { getSaveFile } from "./getSaveFile";
+  import { onMount } from "svelte";
+  import "vanilla-colorful";
 
   import {
     cropImage,
@@ -20,6 +22,7 @@
     Button,
     ProgressIndicator,
     InlineNotification,
+    Modal,
     ProgressStep,
     Loading,
     Slider,
@@ -31,6 +34,7 @@
 
   import WatsonHealthHangingProtocol32 from "carbon-icons-svelte/lib/WatsonHealthHangingProtocol32";
   import TrashCan32 from "carbon-icons-svelte/lib/TrashCan32";
+  import ColorPalette32 from "carbon-icons-svelte/lib/ColorPalette32";
 
   let player;
 
@@ -58,7 +62,8 @@
 
   let progress_bar_index = 0;
 
-  let content_path = "";
+  let content_path;
+  let save_file_path;
 
   let drawing_player = false;
   let player_drawn = false;
@@ -78,17 +83,24 @@
   let shirt_colour;
   let pants_colour;
 
+  let eye_colour_modal = false;
+  let hair_colour_modal = false;
+  let shirt_colour_modal = false;
+  let pants_colour_modal = false;
+
   const dispatcher = createEventDispatcher();
 
   async function loadSave() {
-    player = await getSaveFile();
+    player = await getSaveFile(save_file_path);
+
     if (player) {
-      console.dir(player);
       progress_bar_index = 1;
+      save_file_path = player.saveFilePath;
 
       // Update Colours and Indices
       eye_colour = player.eyeColor;
       hair_colour = player.hairColor;
+
       shirt_colour = player.shirtColor;
       pants_colour = player.pantsColor;
 
@@ -120,8 +132,10 @@
     }
   }
 
-  async function getContent() {
-    content_path = await window.__TAURI__.dialog.open({ directory: true });
+  async function getContent(event) {
+    if (event !== "use_existing_path") {
+      content_path = await window.__TAURI__.dialog.open({ directory: true });
+    }
 
     async function addSprite(spriteName) {
       const spriteToAdd = await fetchContent(
@@ -157,9 +171,14 @@
     }
   }
 
+  async function resetAppearance() {
+    await loadSave();
+    await getContent("use_existing_path");
+  }
+
   async function updateSprites() {
-    await updateSkinColour();
     await updateShoeColour();
+    await updateSkinColour();
     await updateArms();
     await updateBody();
     await updateHats();
@@ -184,35 +203,34 @@
 
     let skin_colours_array = [];
 
-    skin_colours_image.onload = () => {
-      skin_context.drawImage(skin_colours_image, 0, 0);
-
-      const skin_colours_data = skin_context
-        .getImageData(0, 0, 3, 1)
-        .data.map((item) => {
-          skin_colours_array.push(item);
-        });
-
-      player_skincolours = [];
-
-      player_skincolours.push(
-        `rgba(${skin_colours_array[0]}, ${skin_colours_array[1]}, ${
-          skin_colours_array[2]
-        }, ${skin_colours_array[3] / 255})`
-      );
-      player_skincolours.push(
-        `rgba(${skin_colours_array[4]}, ${skin_colours_array[5]}, ${
-          skin_colours_array[6]
-        }, ${skin_colours_array[7] / 255})`
-      );
-      player_skincolours.push(
-        `rgba(${skin_colours_array[8]}, ${skin_colours_array[9]}, ${
-          skin_colours_array[10]
-        }, ${skin_colours_array[11] / 255})`
-      );
-    };
-
     skin_colours_image.src = skin_colours_sprite;
+    await skin_colours_image.decode();
+
+    skin_context.drawImage(skin_colours_image, 0, 0);
+
+    const skin_colours_data = skin_context
+      .getImageData(0, 0, 3, 1)
+      .data.map((item) => {
+        skin_colours_array.push(item);
+      });
+
+    player_skincolours = [];
+
+    player_skincolours.push(
+      `rgba(${skin_colours_array[0]}, ${skin_colours_array[1]}, ${
+        skin_colours_array[2]
+      }, ${skin_colours_array[3] / 255})`
+    );
+    player_skincolours.push(
+      `rgba(${skin_colours_array[4]}, ${skin_colours_array[5]}, ${
+        skin_colours_array[6]
+      }, ${skin_colours_array[7] / 255})`
+    );
+    player_skincolours.push(
+      `rgba(${skin_colours_array[8]}, ${skin_colours_array[9]}, ${
+        skin_colours_array[10]
+      }, ${skin_colours_array[11] / 255})`
+    );
   }
 
   async function updateShoeColour() {
@@ -229,40 +247,41 @@
       1
     );
 
-    let shoe_colours_array = [];
-
-    shoe_colours_image.onload = () => {
-      shoe_context.drawImage(shoe_colours_image, 0, 0);
-
-      const shoe_colours_data = shoe_context
-        .getImageData(0, 0, 4, 1)
-        .data.map((item) => {
-          shoe_colours_array.push(item);
-        });
-
-      player_shoecolours.push(
-        `rgba(${shoe_colours_array[0]}, ${shoe_colours_array[1]}, ${
-          shoe_colours_array[2]
-        }, ${shoe_colours_array[3] / 255})`
-      );
-      player_shoecolours.push(
-        `rgba(${shoe_colours_array[4]}, ${shoe_colours_array[5]}, ${
-          shoe_colours_array[6]
-        }, ${shoe_colours_array[7] / 255})`
-      );
-      player_shoecolours.push(
-        `rgba(${shoe_colours_array[8]}, ${shoe_colours_array[9]}, ${
-          shoe_colours_array[10]
-        }, ${shoe_colours_array[11] / 255})`
-      );
-      player_shoecolours.push(
-        `rgba(${shoe_colours_array[12]}, ${shoe_colours_array[13]}, ${
-          shoe_colours_array[14]
-        }, ${shoe_colours_array[15] / 255})`
-      );
-    };
-
     shoe_colours_image.src = shoe_colours_sprite;
+    await shoe_colours_image.decode();
+
+    shoe_context.drawImage(shoe_colours_image, 0, 0);
+
+    function get_shoe_colours_data() {
+      return new Promise((resolve) =>
+        resolve(shoe_context.getImageData(0, 0, 4, 1).data)
+      );
+    }
+
+    const shoe_colours_data = await get_shoe_colours_data();
+
+    player_shoecolours = [];
+
+    player_shoecolours.push(
+      `rgba(${shoe_colours_data[0]}, ${shoe_colours_data[1]}, ${
+        shoe_colours_data[2]
+      }, ${shoe_colours_data[3] / 255})`
+    );
+    player_shoecolours.push(
+      `rgba(${shoe_colours_data[4]}, ${shoe_colours_data[5]}, ${
+        shoe_colours_data[6]
+      }, ${shoe_colours_data[7] / 255})`
+    );
+    player_shoecolours.push(
+      `rgba(${shoe_colours_data[8]}, ${shoe_colours_data[9]}, ${
+        shoe_colours_data[10]
+      }, ${shoe_colours_data[11] / 255})`
+    );
+    player_shoecolours.push(
+      `rgba(${shoe_colours_data[12]}, ${shoe_colours_data[13]}, ${
+        shoe_colours_data[14]
+      }, ${shoe_colours_data[15] / 255})`
+    );
   }
 
   async function updateHair() {
@@ -312,6 +331,7 @@
 
     player_hair = new Image();
     player_hair.src = player_hair_tinted;
+    await player_hair.decode();
   }
 
   async function updateHats() {
@@ -342,6 +362,7 @@
 
       player_hat = new Image();
       player_hat.src = player_hat_sprite;
+      await player_hat.decode();
     } else {
       player_hat = new Image();
     }
@@ -363,6 +384,7 @@
 
     player_arms = new Image();
     player_arms.src = player_arms_updated_skin_colour;
+    await player_arms.decode();
   }
 
   async function updateBody() {
@@ -381,6 +403,7 @@
 
     player_body = new Image();
     player_body.src = player_body_updated_skin_colour;
+    await player_body.decode();
   }
 
   async function updateAccessories() {
@@ -398,6 +421,7 @@
 
       player_accessory = new Image();
       player_accessory.src = player_accessory_sprite;
+      await player_accessory.decode();
     } else {
       player_accessory = new Image();
     }
@@ -431,8 +455,8 @@
       32
     );
 
-    if (player.pantsColor) {
-      let pantsTint = chroma(player.pantsColor).rgba();
+    if (pants_colour) {
+      let pantsTint = chroma(pants_colour).rgba();
 
       player_pants_sprite = await tintImage(
         player_pants_sprite,
@@ -444,6 +468,7 @@
 
     player_pants = new Image();
     player_pants.src = player_pants_sprite;
+    await player_pants.decode();
   }
 
   async function updateShirt() {
@@ -452,6 +477,7 @@
     async function fetchShirt(shirtNum) {
       const shirts = new Image();
       shirts.src = sprites.shirts;
+      await shirts.decode();
 
       let x = 0;
       let y = 0;
@@ -498,10 +524,10 @@
 
     let shirtTint;
 
-    if (player.shirtColor) {
-      shirtTint = chroma(player.shirtColor).rgba();
+    if (shirt_colour) {
+      shirtTint = chroma(shirt_colour).rgba();
       player_shirt_sprite = await tintImage(
-        player_hair_sprite,
+        player_shirt_sprite,
         shirtTint[0],
         shirtTint[1],
         shirtTint[2]
@@ -510,6 +536,7 @@
 
     player_shirt = new Image();
     player_shirt.src = player_shirt_sprite;
+    await player_shirt.decode();
   }
 
   async function uploadSprite(sprite_type) {
@@ -552,6 +579,8 @@
     const bootsOffsetX = 7;
     const bootsOffsetY = 28;
 
+    console.log(player_shoecolours);
+
     ctx.fillStyle = player_shoecolours[0];
     ctx.fillRect(1 + bootsOffsetX, 0 + bootsOffsetY, 1, 3);
     ctx.fillRect(0 + bootsOffsetX, 3 + bootsOffsetY, 1, 2);
@@ -586,19 +615,21 @@
     player_drawn = true;
   }
   $: document.documentElement.setAttribute("theme", "g100");
+
+  onMount(async () => {});
 </script>
 
 <main>
-  <Grid fullWidth>
-    <Row>
-      <Column>
-        <section class="input--wrapper">
-          <div class="inputs">
+  <Grid>
+    <section class="input--wrapper">
+      <div class="inputs">
+        <Row>
+          <Column>
             <Row>
               <TextInput
                 size="sm"
                 disabled
-                value={player ? player.saveFilePath : ""}
+                value={save_file_path ? save_file_path : ""}
                 labelText="Savefile Path:"
               />
               <div class="button">
@@ -626,242 +657,474 @@
                 />
               </div>
             </Row>
-            <ProgressIndicator
-              currentIndex={progress_bar_index}
-              spaceEqually
-              preventChangeOnClick
-            >
-              <ProgressStep
-                disabled={player
-                  ? "saveFilePath" in player
-                    ? false
-                    : true
-                  : true}
-                complete={player ? "saveFilePath" in player : false}
-                label="Load Savefile"
-              />
-              <ProgressStep
-                disabled={!content_path}
-                complete={content_path}
-                label="Load Content"
-              />
-            </ProgressIndicator>
+            <div class="progress">
+              <ProgressIndicator
+                currentIndex={progress_bar_index}
+                spaceEqually
+                preventChangeOnClick
+              >
+                <ProgressStep
+                  disabled={player
+                    ? "saveFilePath" in player
+                      ? false
+                      : true
+                    : true}
+                  complete={player ? "saveFilePath" in player : false}
+                  label="Load Savefile"
+                />
+                <ProgressStep
+                  disabled={!content_path}
+                  complete={content_path}
+                  label="Load Content"
+                />
+              </ProgressIndicator>
+            </div>
 
-            <div class="center">
-              <Button
+            <div class="character--buttons">
+              <button
                 disabled={progress_bar_index < 1 || !content_path}
-                on:click={drawCharacter}>Draw Character</Button
+                on:click={resetAppearance}>Reset Appearance</button
+              >
+              <button
+                disabled={progress_bar_index < 1 || !content_path}
+                on:click={drawCharacter}>Draw Character</button
               >
             </div>
-            <Row>
-              <TextInput
-                size="sm"
-                disabled
-                value={custom_hair_path ? custom_hair_path : ""}
-                labelText="Custom Hair:"
-              />
-              <div class="button">
-                <Button
-                  size="small"
-                  iconDescription="Browse"
-                  icon={WatsonHealthHangingProtocol32}
-                  on:click={() => uploadSprite("hair")}
-                />
-                <Button
-                  size="small"
-                  kind="danger-tertiary"
-                  iconDescription="Remove Custom Hair"
-                  disabled={!custom_hair_path}
-                  icon={TrashCan32}
-                  on:click={() => {
-                    custom_hair = false;
-                    custom_hair_path = "";
-                  }}
-                />
-              </div>
-            </Row>
 
-            <Row>
-              <TextInput
-                size="sm"
-                disabled
-                value={custom_hat_path ? custom_hat_path : ""}
-                labelText="Custom Hat:"
+            <section class="removal--buttons">
+              <Column
+                style="display: flex; flex-flow: column nowrap; justify-content: center; gap: 1rem;"
+              >
+                <button disabled={custom_hat} on:click={() => (hat_index = -1)}
+                  >Remove Hat</button
+                >
+                <button
+                  disabled={custom_shirt}
+                  on:click={() => (shirt_index = -1)}>Remove Shirt</button
+                >
+              </Column><Column
+                style="display: flex; flex-flow: column nowrap; justify-content: center; gap: 1rem;"
+              >
+                <button
+                  disabled={custom_pants}
+                  on:click={() => (pants_index = -1)}>Remove Pants</button
+                >
+                <button on:click={() => (accessory_index = -1)}
+                  >Remove Acc.</button
+                >
+              </Column>
+            </section>
+          </Column>
+          <hr class="mini vertical" />
+          <Column>
+            <section class="player--wrapper">
+              <canvas
+                class={player_drawn ? "player" : "hidden"}
+                bind:this={player_canvas}
+                width="24"
+                height="38"
               />
-              <div class="button">
-                <Button
-                  size="small"
-                  iconDescription="Browse"
-                  icon={WatsonHealthHangingProtocol32}
-                  on:click={() => uploadSprite("hat")}
-                />
-                <Button
-                  size="small"
-                  kind="danger-tertiary"
-                  iconDescription="Remove Custom Hat"
-                  disabled={!custom_hat_path}
-                  icon={TrashCan32}
-                  on:click={() => {
-                    custom_hat = false;
-                    custom_hat_path = "";
-                  }}
-                />
-              </div>
-            </Row>
+              {#if drawing_player}
+                <Loading />
+              {/if}
+            </section></Column
+          >
+        </Row>
+      </div>
+    </section>
 
-            <Row>
-              <TextInput
-                size="sm"
-                disabled
-                value={custom_shirt_path ? custom_shirt_path : ""}
-                labelText="Custom Shirt:"
+    <Row>
+      <Column>
+        <section class="custom--content">
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={custom_hair_path ? custom_hair_path : ""}
+              labelText="Custom Hair:"
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Browse"
+                icon={WatsonHealthHangingProtocol32}
+                on:click={() => uploadSprite("hair")}
               />
-              <div class="button">
-                <Button
-                  size="small"
-                  iconDescription="Browse"
-                  icon={WatsonHealthHangingProtocol32}
-                  on:click={() => uploadSprite("shirt")}
-                />
-                <Button
-                  size="small"
-                  kind="danger-tertiary"
-                  iconDescription="Remove Custom Shirt"
-                  disabled={!custom_shirt_path}
-                  icon={TrashCan32}
-                  on:click={() => {
-                    custom_shirt = false;
-                    custom_shirt_path = "";
-                  }}
-                />
-              </div>
-            </Row>
+              <Button
+                size="small"
+                kind="danger-tertiary"
+                iconDescription="Remove Custom Hair"
+                disabled={!custom_hair_path}
+                icon={TrashCan32}
+                on:click={() => {
+                  custom_hair = false;
+                  custom_hair_path = "";
+                }}
+              />
+            </div>
+          </Row>
 
-            <Row>
-              <TextInput
-                size="sm"
-                disabled
-                value={custom_pants_path ? custom_pants_path : ""}
-                labelText="Custom Pants:"
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={custom_hat_path ? custom_hat_path : ""}
+              labelText="Custom Hat:"
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Browse"
+                icon={WatsonHealthHangingProtocol32}
+                on:click={() => uploadSprite("hat")}
               />
-              <div class="button">
-                <Button
-                  size="small"
-                  iconDescription="Browse"
-                  icon={WatsonHealthHangingProtocol32}
-                  on:click={() => uploadSprite("pants")}
-                />
-                <Button
-                  size="small"
-                  kind="danger-tertiary"
-                  iconDescription="Remove Custom Pants"
-                  disabled={!custom_pants_path}
-                  icon={TrashCan32}
-                  on:click={() => {
-                    custom_pants = false;
-                    custom_pants_path = "";
-                  }}
-                />
-              </div>
-            </Row>
-          </div>
+              <Button
+                size="small"
+                kind="danger-tertiary"
+                iconDescription="Remove Custom Hat"
+                disabled={!custom_hat_path}
+                icon={TrashCan32}
+                on:click={() => {
+                  custom_hat = false;
+                  custom_hat_path = "";
+                }}
+              />
+            </div>
+          </Row>
+
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={custom_shirt_path ? custom_shirt_path : ""}
+              labelText="Custom Shirt:"
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Browse"
+                icon={WatsonHealthHangingProtocol32}
+                on:click={() => uploadSprite("shirt")}
+              />
+              <Button
+                size="small"
+                kind="danger-tertiary"
+                iconDescription="Remove Custom Shirt"
+                disabled={!custom_shirt_path}
+                icon={TrashCan32}
+                on:click={() => {
+                  custom_shirt = false;
+                  custom_shirt_path = "";
+                }}
+              />
+            </div>
+          </Row>
+
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={custom_pants_path ? custom_pants_path : ""}
+              labelText="Custom Pants:"
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Browse"
+                icon={WatsonHealthHangingProtocol32}
+                on:click={() => uploadSprite("pants")}
+              />
+              <Button
+                size="small"
+                kind="danger-tertiary"
+                iconDescription="Remove Custom Pants"
+                disabled={!custom_pants_path}
+                icon={TrashCan32}
+                on:click={() => {
+                  custom_pants = false;
+                  custom_pants_path = "";
+                }}
+              />
+            </div>
+          </Row>
+        </section>
+      </Column>
+      <Column>
+        <section class="colour--pickers">
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={eye_colour ? eye_colour : ""}
+              labelText="Eye Colour:"
+              style={eye_colour
+                ? `background-color: ${chroma(eye_colour).alpha(0.15)}`
+                : ""}
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Set Eye Colour"
+                icon={ColorPalette32}
+                on:click={() => (eye_colour_modal = true)}
+              />
+            </div>
+          </Row>
+
+          <Modal
+            passiveModal
+            open={eye_colour_modal}
+            on:close={() => {
+              eye_colour_modal = false;
+            }}
+            modalHeading="Set Eye Colour"
+            on:close
+          >
+            <div
+              style="display: flex; flex-flow: column nowrap; align-items: center;"
+            >
+              <hex-color-picker
+                on:color-changed={(event) => {
+                  if (event.detail.value) {
+                    const newColour = chroma(event.detail.value).rgba();
+                    eye_colour = `rgba(${newColour[0]}, ${newColour[1]}, ${newColour[2]}, 1)`;
+                  }
+                }}
+              />
+            </div>
+          </Modal>
+
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={hair_colour ? hair_colour : ""}
+              labelText="Hair Colour:"
+              style={hair_colour
+                ? `background-color: ${chroma(hair_colour).alpha(0.15)}`
+                : ""}
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Set Hair Colour"
+                icon={ColorPalette32}
+                on:click={() => (hair_colour_modal = true)}
+              />
+            </div>
+          </Row>
+
+          <Modal
+            passiveModal
+            open={hair_colour_modal}
+            on:close={() => {
+              hair_colour_modal = false;
+            }}
+            modalHeading="Set Hair Colour"
+            on:close
+          >
+            <div
+              style="display: flex; flex-flow: column nowrap; align-items: center;"
+            >
+              <hex-color-picker
+                on:color-changed={(event) => {
+                  if (event.detail.value) {
+                    const newColour = chroma(event.detail.value).rgba();
+                    hair_colour = `rgba(${newColour[0]}, ${newColour[1]}, ${newColour[2]}, 1)`;
+                  }
+                }}
+              />
+            </div>
+          </Modal>
+
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={shirt_colour ? shirt_colour : ""}
+              labelText="Shirt Colour:"
+              style={shirt_colour
+                ? `background-color: ${chroma(shirt_colour).alpha(0.15)}`
+                : ""}
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Set Shirt Colour"
+                icon={ColorPalette32}
+                on:click={() => (shirt_colour_modal = true)}
+              />
+            </div>
+          </Row>
+
+          <Modal
+            passiveModal
+            open={shirt_colour_modal}
+            on:close={() => {
+              shirt_colour_modal = false;
+            }}
+            modalHeading="Set Shirt Colour"
+            on:close
+          >
+            <div
+              style="display: flex; flex-flow: column nowrap; align-items: center;"
+            >
+              <hex-color-picker
+                on:color-changed={(event) => {
+                  if (event.detail.value) {
+                    const newColour = chroma(event.detail.value).rgba();
+                    shirt_colour = `rgba(${newColour[0]}, ${newColour[1]}, ${newColour[2]}, 1)`;
+                  }
+                }}
+              />
+            </div>
+          </Modal>
+
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
+              value={pants_colour ? pants_colour : ""}
+              labelText="Pants Colour:"
+              style={pants_colour
+                ? `background-color: ${chroma(pants_colour).alpha(0.15)}`
+                : ""}
+            />
+            <div class="button">
+              <Button
+                size="small"
+                iconDescription="Set Pants Colour"
+                icon={ColorPalette32}
+                on:click={() => (pants_colour_modal = true)}
+              />
+            </div>
+          </Row>
+
+          <Modal
+            passiveModal
+            open={pants_colour_modal}
+            on:close={() => {
+              pants_colour_modal = false;
+            }}
+            modalHeading="Set Pants Colour"
+            on:close
+          >
+            <div
+              style="display: flex; flex-flow: column nowrap; align-items: center;"
+            >
+              <hex-color-picker
+                on:color-changed={(event) => {
+                  if (event.detail.value) {
+                    const newColour = chroma(event.detail.value).rgba();
+                    pants_colour = `rgba(${newColour[0]}, ${newColour[1]}, ${newColour[2]}, 1)`;
+                  }
+                }}
+              />
+            </div>
+          </Modal>
         </section>
       </Column>
     </Row>
-  </Grid>
-
-  <section class="player--wrapper">
-    <canvas
-      class={player_drawn ? "player" : "hidden"}
-      bind:this={player_canvas}
-      width="24"
-      height="38"
-    />
-    {#if drawing_player}
-      <Loading withOverlay={false} />
-    {/if}
-  </section>
-
-  <Grid>
+    <hr class="mini" />
     <Row>
       <Column>
-  <Slider
-    labelText="Skin Colour"
-    min={0}
-    max={22}
-    value={skin_colour_index}
-    on:change={(event) => (skin_colour_index = event.detail)}
-  />
+        <div class="sliders--wrapper">
+          <section class="sliders">
+            <Slider
+              style="width: 100%;"
+              labelText="Skin Colour"
+              min={0}
+              max={22}
+              value={skin_colour_index}
+              on:change={(event) => (skin_colour_index = event.detail)}
+            />
 
-  <Slider
-    labelText="Shoe Colour"
-    min={0}
-    max={18}
-    value={shoe_colour_index}
-    on:change={(event) => (shoe_colour_index = event.detail)}
-  />
+            <Slider
+              style="width: 100%;"
+              labelText="Shoe Colour"
+              min={0}
+              max={18}
+              value={shoe_colour_index}
+              on:change={(event) => (shoe_colour_index = event.detail)}
+            />
 
-  <Slider
-    labelText="Shirt Index"
-    min={0}
-    max={299}
-    value={shirt_index}
-    disabled={custom_shirt}
-    on:change={(event) => (shirt_index = event.detail)}
-  />
+            <Slider
+              style="width: 100%;"
+              labelText="Hair Index"
+              min={0}
+              max={79}
+              value={hair_index}
+              on:change={(event) => (hair_index = event.detail)}
+            />
 
-  <Slider
-    labelText="Pants Index"
-    min={0}
-    max={15}
-    value={pants_index}
-    disabled={custom_pants}
-    on:change={(event) => (pants_index = event.detail)}
-  />
+            <Slider
+              style="width: 100%;"
+              labelText="Accessory Index"
+              min={0}
+              max={19}
+              value={accessory_index}
+              on:change={(event) => (accessory_index = event.detail)}
+            />
 
-  <Slider
-    labelText="Accessory Index"
-    min={0}
-    max={18}
-    value={accessory_index}
-    on:change={(event) => (accessory_index = event.detail)}
-  />
+            <Slider
+              style="width: 100%;"
+              labelText="Hat Index"
+              min={0}
+              max={93}
+              value={hat_index}
+              disabled={custom_hat}
+              on:change={(event) => {
+                hat_index = event.detail;
+              }}
+            />
 
-  <Slider
-    labelText="Hat Index"
-    min={0}
-    max={93}
-    value={hat_index}
-    disabled={custom_hat}
-    on:change={(event) => {
-      hat_index = event.detail;
-      console.log(hat_index);
-    }}
-  />
+            <Slider
+              style="width: 100%;"
+              labelText="Shirt Index"
+              min={0}
+              max={299}
+              value={shirt_index}
+              disabled={custom_shirt}
+              on:change={(event) => (shirt_index = event.detail)}
+            />
 
-  <section class="removal--buttons">
-    <button disabled={custom_hat} on:click={() => (hat_index = -1)}
-      >Remove Hat</button
-    >
-    <button on:click={() => (accessory_index = -1)}>Remove Accessory</button>
-    <button disabled={custom_shirt} on:click={() => (shirt_index = -1)}
-      >Remove Shirt</button
-    >
-    <button disabled={custom_pants} on:click={() => (pants_index = -1)}
-      >Remove Pants</button
-    >
-  </section>
-</Column>
-</Row>
+            <Slider
+              style="width: 100%;"
+              labelText="Pants Index"
+              min={0}
+              max={15}
+              value={pants_index}
+              disabled={custom_pants}
+              on:change={(event) => (pants_index = event.detail)}
+            />
+          </section>
+        </div>
+      </Column>
+    </Row>
   </Grid>
 </main>
 
 <style>
-  @import "https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css";
+  main {
+    width: 100vw;
+  }
 
   .hidden {
     opacity: 0 !important;
-    border: none !important;
+    border: 2px solid #525252 !important;
+    width: 312px;
+    height: 494px;
+  }
+
+  .player--wrapper {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   .player {
@@ -878,19 +1141,122 @@
     transition: opacity 0.5s linear, border 0.5s linear;
   }
 
-  .inputs {
-    display: flex;
-    flex-flow: column nowrap;
-    justify-content: center;
-    gap: 1rem;
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-  }
-
   .button {
     position: relative;
     display: flex;
     align-self: flex-end;
     bottom: 0.5em;
+  }
+
+  button {
+    background-color: #262626;
+    color: white;
+    padding: 0.5rem;
+    font-weight: bold;
+  }
+
+  button:disabled {
+    font-weight: normal;
+    background-color: #161616;
+    color: #8d8d8d;
+  }
+
+  button:disabled:hover {
+    cursor: not-allowed;
+  }
+
+  button:hover {
+    cursor: pointer;
+  }
+
+  button:focus {
+    border: 1px solid #0f62fe;
+  }
+
+  button:active {
+    background-color: #363636;
+  }
+
+  hr {
+    border: 1px solid hsl(219, 99%, 33%);
+    margin-bottom: 2rem;
+  }
+
+  hr.mini {
+    border: 1px solid hsl(219, 99%, 13%);
+    margin: 2rem;
+  }
+
+  @media only screen and (max-width: 729px) {
+    hr.vertical {
+      display: none;
+    }
+  }
+
+  .character--buttons {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    gap: 1rem;
+  }
+
+  .progress {
+    margin-top: 2rem;
+  }
+
+  .removal--buttons {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom--content {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    height: 100%;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .colour--pickers {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    height: 100%;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .input--wrapper {
+    margin-top: 2rem;
+  }
+
+  .sliders {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .sliders--wrapper {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  :global(.bx--slider-container) {
+    width: 100%;
+  }
+
+  :global(html) {
+    overflow-x: hidden;
   }
 </style>
