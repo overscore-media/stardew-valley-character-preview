@@ -1,11 +1,11 @@
 [package]
-name = "stardew-project"
+name = "stardew-valley-character-preview"
 version = "0.1.0"
-description = "A Tauri App"
-authors = [ "you" ]
+description = "Stardew Valley Kisekae for your Desktop"
+authors = [ "Matthew Piercey" ]
 license = ""
-repository = ""
-default-run = "stardew-project"
+repository = "https://github.com/overscore-media/stardew-valley-character-preview"
+default-run = "stardew-valley-character-preview"
 edition = "2018"
 build = "src/build.rs"
 
@@ -26,5 +26,5 @@ embedded-server = [ "tauri/embedded-server" ]
 no-server = [ "tauri/no-server" ]
 
 [[bin]]
-name = "stardew-project"
+name = "stardew-valley-character-preview"
 path = "src/main.rs"

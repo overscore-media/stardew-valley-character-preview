@@ -2,29 +2,46 @@ import txml from "txml";
 import BigNumber from "bignumber.js";
 
 export async function getSaveFile(current_path) {
-  let saveFilePath
-  
+  let saveFilePath;
+  // Because for some reason the first dialog opened has an error
+  let comError = false;
+
   if (!current_path) {
-    saveFilePath = await window.__TAURI__.dialog.open();
+    saveFilePath = await window.__TAURI__.dialog.open().catch((err) => {
+      if (err === "Could not initialize COM.") {
+        comError = true;
+      }
+    });
+
+    if (comError) {
+      saveFilePath = await window.__TAURI__.dialog.open();
+      comError = false;
+    }
   } else {
-    saveFilePath = current_path
+    saveFilePath = current_path;
   }
 
+  // Read the file from the path the dialog (or current_path) gave
   const saveFileXML = await window.__TAURI__.fs.readTextFile(saveFilePath);
+  // Parse out the savefile; look for the "SaveGame" section
   const saveFile = filterParsedXML(txml.parse(saveFileXML), "SaveGame");
+  // Get the "player" attribute from the savefile
   const player = saveFile.player;
 
-  let shirtColor, pantsColor
+  let shirtColor, pantsColor;
 
+  // Put the shirt colour and pants colour into nice RGBA strings if they exist
   if (player.shirtColor) {
-    shirtColor = `rgba(${player.shirtColor.R}, ${player.shirtColor.G}, ${player.shirtColor.B}, ${player.shirtColor.A / 255})`
+    shirtColor = `rgba(${player.shirtColor.R}, ${player.shirtColor.G}, ${
+      player.shirtColor.B
+    }, ${player.shirtColor.A / 255})`;
   }
 
   if (player.pantsColor) {
-    pantsColor = `rgba(${player.pantsColor.R}, ${player.pantsColor.G}, ${player.pantsColor.B}, ${player.pantsColor.A / 255})`
+    pantsColor = `rgba(${player.pantsColor.R}, ${player.pantsColor.G}, ${
+      player.pantsColor.B
+    }, ${player.pantsColor.A / 255})`;
   }
-
-  console.dir(player)
 
   return {
     // Cosmetic Items
@@ -40,8 +57,12 @@ export async function getSaveFile(current_path) {
 
     // Appearance
     hair: player.hair,
-    eyeColor: `rgba(${player.newEyeColor.R}, ${player.newEyeColor.G}, ${player.newEyeColor.B}, ${player.newEyeColor.A / 255})`,
-    hairColor: `rgba(${player.hairstyleColor.R}, ${player.hairstyleColor.G}, ${player.hairstyleColor.B}, ${player.hairstyleColor.A / 255})`,
+    eyeColor: `rgba(${player.newEyeColor.R}, ${player.newEyeColor.G}, ${
+      player.newEyeColor.B
+    }, ${player.newEyeColor.A / 255})`,
+    hairColor: `rgba(${player.hairstyleColor.R}, ${player.hairstyleColor.G}, ${
+      player.hairstyleColor.B
+    }, ${player.hairstyleColor.A / 255})`,
     shoes: player.shoes,
     skin: player.skin,
     skinColor: player.skinColor,
@@ -50,10 +71,11 @@ export async function getSaveFile(current_path) {
     name: player.name,
     gameVersion: player.gameVersion,
     gender: player.isMale ? "Male" : "Female",
-    saveFilePath: saveFilePath
+    saveFilePath: saveFilePath,
   };
 }
 
+// Yeah, this is a doozy
 function filterParsedXML(tag, attrib) {
   const matchingTag = tag.filter((tag) => {
     return tag.tagName == attrib;
@@ -61,6 +83,10 @@ function filterParsedXML(tag, attrib) {
 
   return internalParser(matchingTag.children);
 
+  // This doesn't even really make sense anymore, but it does work
+  // It deals with the fact that txml creates a weird type of object for the data from the
+  // XML savefile, but it's quick and there aren't really many better options
+  // Also this is required to do some... type coercion for lack of a better word
   function internalParser(children) {
     let valuesObject = {};
 
@@ -70,11 +96,16 @@ function filterParsedXML(tag, attrib) {
 
       if (child.children.length === 1) {
         let newValue = child.children[0];
+
+        // Basically some type coercion but a janky custom implementation
         if (newValue === "true") {
+          // There's probably a better way to do this...
           newValue = true;
         } else if (newValue === "false") {
           newValue = false;
         } else if (!isNaN(newValue)) {
+          // Only converts numbers whose precision doesn't exceed that of JS's
+          // BigNumber checks that; otherwise it'll stay a string
           if (Number(newValue).toString() === BigNumber(newValue).toString()) {
             newValue = Number(newValue);
           }
@@ -85,6 +116,7 @@ function filterParsedXML(tag, attrib) {
         }
         newChild = newValue;
       } else {
+        // There's some recursion going on, and you'll see it above too
         newChild = internalParser(child.children);
       }
 

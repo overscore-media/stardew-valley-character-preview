@@ -1,5 +1,5 @@
 {
-  "name": "svelte-app",
+  "name": "stardew-valley-character-preview",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -15,6 +15,8 @@
     "@rollup/plugin-node-resolve": "^11.0.0",
     "carbon-components": "^10.32.0",
     "carbon-components-svelte": "^0.31.1",
+    "eslint": "^7.23.0",
+    "eslint-plugin-svelte3": "^3.1.2",
     "postcss": "^8.2.9",
     "rollup": "^2.3.4",
     "rollup-plugin-css-only": "^3.1.0",
