@@ -1,5 +1,7 @@
 ## Stardew Valley Character Preview (SVCP)
 
+[![Build for Release](https://github.com/overscore-media/stardew-valley-character-preview/actions/workflows/release.yml/badge.svg)](https://github.com/overscore-media/stardew-valley-character-preview/actions/workflows/release.yml)
+
 ![Screenshot](screenshot.png)
 
 Think of it as a sort of standalone Kisekae application for Stardew Valley characters. SVCP loads your character's attributes from your savefile, and you can play around with different outfits, colours, and accessories.
