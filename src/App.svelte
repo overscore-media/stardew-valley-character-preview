@@ -2,9 +2,12 @@
   // Custom utility functions
   import {
     cropImage,
+    mirrorImage,
     fetchContent,
     generateSpriteDataUri,
     swapSkinColours,
+    swapShoeColours,
+    swapEyeColour,
     tintImage,
   } from "./utils";
 
@@ -17,13 +20,13 @@
 
   // Carbon Svelte components
   import {
+    ComboBox,
     Grid,
     Row,
     Column,
     TextInput,
     Button,
     ProgressIndicator,
-    InlineNotification,
     Modal,
     ProgressStep,
     Loading,
@@ -40,10 +43,14 @@
   // The player object which will be filled with data from the savefile
   let player;
 
+  // The direction the player is facing [0: Forwards, 1: Left, 2: Backwards, 3: Right]
+  let player_direction = 1;
+
   // The object that will hold the sprites loaded from the unpacked content folder
   let sprites = {};
 
   // For holding custom sprites
+  let custom_base = false;
   let custom_accessory = false;
   let custom_hair = false;
   let custom_hat = false;
@@ -51,7 +58,8 @@
   let custom_pants = false;
 
   // For holding the paths of custom sprites
-  let custom_accessory_path,
+  let custom_base_path,
+    custom_accessory_path,
     custom_hair_path,
     custom_hat_path,
     custom_shirt_path,
@@ -361,15 +369,46 @@
 
   // Get the players' arm sprite
   async function updateArms() {
+    // Coordinates for cropping the arms sprite, based on the direction the player is facing
+    // [0: Forwards, 1: Left, 2: Backwards, 3: Right]
+    const arms_sprite_coords = [
+      [96, 0],
+      [96, 32],
+      [96, 64],
+      [96, 32],
+    ];
+
+    // The sprite to draw
+    let arms_sprite = new Image();
+
+    if (custom_base) {
+      arms_sprite.src = custom_base;
+    } else {
+      arms_sprite.src = sprites.farmerBase;
+    }
+
+    await arms_sprite.decode();
+
+    // Revert to the default base sprite if the custom one is not wide enough
+    // (The assumption being that it doesn't have arms)
+    if (arms_sprite.width <= 96) {
+      arms_sprite = sprites.farmerBase;
+    }
+
     // Crop out a particular bit of the player base sprite to get the front-facing
     // at-rest arms sprite
-    const player_arms_sprite = await cropImage(
+    let player_arms_sprite = await cropImage(
       sprites.farmerBase,
-      96,
-      0,
+      arms_sprite_coords[player_direction][0],
+      arms_sprite_coords[player_direction][1],
       16,
       32
     );
+
+    // Obtain a left-facing sprite by mirroring a right-facing one
+    if (player_direction === 1) {
+      player_arms_sprite = await mirrorImage(player_arms_sprite);
+    }
 
     // Run the fetched sprite through the custom swapSkinColours function
     // imported from utils.js
@@ -386,41 +425,81 @@
 
   // Get the player's body sprite (and update it to match the current skin colours index)
   async function updateBody() {
-    // Get the vanilla player body sprite
-    const player_body_sprite = await cropImage(
-      sprites.farmerBase,
-      0,
-      0,
+    let body_spritesheet = sprites.farmerBase;
+
+    if (custom_base) {
+      body_spritesheet = custom_base;
+    }
+
+    // Coordinates for cropping the body sprite, based on the direction the player is facing
+    // [0: Forwards, 1: Left, 2: Backwards, 3: Right]
+    const body_sprite_coords = [
+      [0, 0],
+      [0, 32],
+      [0, 64],
+      [0, 32],
+    ];
+
+    // Get the player body sprite
+    let player_body_sprite = await cropImage(
+      body_spritesheet,
+      body_sprite_coords[player_direction][0],
+      body_sprite_coords[player_direction][1],
       16,
       32
     );
 
+    // Flip the body sprite if the player is facing left
+    if (player_direction === 1) {
+      player_body_sprite = await mirrorImage(player_body_sprite);
+    }
+
     // Swap the skin colour of the body sprite if the skin colour index
     // isn't "0" - or the same as the vanilla sprite
 
-    let player_body_updated_skin_colour;
+    let player_body_updated_colours;
 
     if (skin_colour_index > 0) {
-      player_body_updated_skin_colour = await swapSkinColours(
+      player_body_updated_colours = await swapSkinColours(
         player_body_sprite,
         player_skincolours
       );
     } else {
-      player_body_updated_skin_colour = player_body_sprite;
+      player_body_updated_colours = player_body_sprite;
     }
+
+    player_body_updated_colours = await swapShoeColours(
+      player_body_updated_colours,
+      player_shoecolours
+    );
+
+    player_body_updated_colours = await swapEyeColour(
+      player_body_updated_colours,
+      eye_colour
+    );
 
     // Either way, update the image with the (potentially) updated skin colour body sprite
     player_body = new Image();
-    player_body.src = player_body_updated_skin_colour;
+    player_body.src = player_body_updated_colours;
     await player_body.decode();
   }
 
   // Update the player's accessory
   async function updateAccessory() {
+    // Coordinates for cropping the accessory sprite, based on the direction the player is facing
+    // [0: Forwards, 1: Left, 2: Backwards, 3: Right]
+
+    // For use in cropping the accessory sprite, based on the direction the player is facing
+    let accessory_offset = 0;
+
+    // Left or right
+    if (player_direction === 1 || player_direction === 3) {
+      accessory_offset = 16;
+    }
+
     // If the player is wearing a non-custom accessory
     if (accessory_index >= 0 && !custom_accessory) {
-      // Some admittedly esoteric logic for finding the row and column of the given
-      // accessory
+      // Some admittedly esoteric logic for finding the row and column of the given accessory
       const accessoryRow = Math.ceil((accessory_index + 1) / 8);
       const accessoryCol =
         accessory_index + 1 - Math.abs((accessoryRow - 1) * 8);
@@ -429,27 +508,47 @@
       const player_accessory_sprite = await cropImage(
         sprites.accessories,
         (accessoryCol - 1) * 16,
-        (accessoryRow - 1) * 32,
+        (accessoryRow - 1) * 32 + accessory_offset,
         16,
         16
       );
 
       // Set the global accessory sprite
       player_accessory = new Image();
-      player_accessory.src = player_accessory_sprite;
+
+      // If the player is not facing backwards (i.e. no accessory)
+      if (player_direction !== 2) {
+        // Mirror if left
+        if (player_direction === 1) {
+          player_accessory.src = await mirrorImage(player_accessory_sprite);
+        } else {
+          player_accessory.src = player_accessory_sprite;
+        }
+      }
+
       await player_accessory.decode();
     } else if (custom_accessory) {
       // Fetch and set a custom accessory sprite
       const player_accessory_sprite = await cropImage(
         custom_accessory,
         0,
-        0,
+        0 + accessory_offset,
         16,
         16
       );
 
       player_accessory = new Image();
-      player_accessory.src = player_accessory_sprite;
+
+      // If the player is not facing backwards (i.e. no accessory)
+      if (player_direction !== 2) {
+        // Mirror if left
+        if (player_direction === 1) {
+          player_accessory.src = await mirrorImage(player_accessory_sprite);
+        } else {
+          player_accessory.src = player_accessory_sprite;
+        }
+      }
+
       await player_accessory.decode();
     } else {
       // Clear the accessory sprite
@@ -494,11 +593,24 @@
 
     // If the player has a hair sprite
     if (hairSprite) {
+      // Offset based on what direction the player is facing
+      let hair_offset = 0;
+
+      // Left or right
+      if (player_direction === 1 || player_direction === 3) {
+        hair_offset = 32;
+      }
+
+      // Backwards
+      if (player_direction === 2) {
+        hair_offset = 64;
+      }
+
       // Crop it
       const player_hair_sprite = await cropImage(
         hairSprite,
         hairX,
-        hairY,
+        hairY + hair_offset,
         16,
         32
       );
@@ -517,7 +629,14 @@
 
       // Update the global hair sprite
       player_hair = new Image();
-      player_hair.src = player_hair_tinted;
+
+      // Flip if player is facing left
+      if (player_direction === 1) {
+        player_hair.src = await mirrorImage(player_hair_tinted);
+      } else {
+        player_hair.src = player_hair_tinted;
+      }
+
       await player_hair.decode;
     } else {
       // Clear the global hair sprite
@@ -548,11 +667,30 @@
         hatCol = hatNum - 12 * (hatRow - 1) + 1;
       }
 
+      // Offset based on which direction the player is facing
+      let hat_offset = 0;
+
+      // Thought I'd... switch it up a bit...
+      switch (player_direction) {
+        // Left - yeah there actually is a left hat sprite; no mirroring required
+        case 1:
+          hat_offset = 40;
+          break;
+        // Backwards
+        case 2:
+          hat_offset = 60;
+          break;
+        // Right
+        case 3:
+          hat_offset = 20;
+          break;
+      }
+
       // Extract the hat sprite data
       const player_hat_sprite = await cropImage(
         hatSprite,
         (hatCol - 1) * 20,
-        (hatRow - 1) * 80,
+        (hatRow - 1) * 80 + hat_offset,
         20,
         20
       );
@@ -583,6 +721,23 @@
       let shirtRow = 0;
       let shirtColumn = 0;
 
+      let shirtOffset = 0;
+
+      switch (player_direction) {
+        // Left
+        case 1:
+          shirtOffset = 16;
+          break;
+        // Backwards
+        case 2:
+          shirtOffset = 24;
+          break;
+        // Right
+        case 3:
+          shirtOffset = 8;
+          break;
+      }
+
       // Note the Offscreen Canvas showing up again
       const canvas = new OffscreenCanvas(shirts.width, shirts.height);
       const context = canvas.getContext("2d");
@@ -597,7 +752,7 @@
 
       // If the shirt is from the top part of the sprite sheet
       if (shirtNum < 128) {
-        return await cropImage(sprites.shirts, x, y, 8, 8);
+        return await cropImage(sprites.shirts, x, y + shirtOffset, 8, 8);
       } else {
         // Otherwise, if the sprite isn't empty at a given index
         if (
@@ -605,12 +760,22 @@
             .getImageData(x, y, 8, 32)
             .data.reduce((prev, val) => prev + val)
         ) {
-          return await cropImage(sprites.shirts, x, y, 8, 8);
+          return await cropImage(sprites.shirts, x, y + shirtOffset, 8, 8);
           // If the sprite is empty
         } else {
           // If the sprite 128 pixels over isn't empty
-          if (context.getImageData(x + 128, y, 8, 32).data.reduce((prev, val) => prev + val)) {
-            return await cropImage(sprites.shirts, x + 128, y, 8, 8);
+          if (
+            context
+              .getImageData(x + 128, y, 8, 32)
+              .data.reduce((prev, val) => prev + val)
+          ) {
+            return await cropImage(
+              sprites.shirts,
+              x + 128,
+              y + shirtOffset,
+              8,
+              8
+            );
           } else {
             // Return the default shirt sprite otherwise
             if (player.gender === "Female") {
@@ -623,7 +788,7 @@
 
             x = (shirtColumn - 1) * 8;
             y = (shirtRow - 1) * 32;
-            return await cropImage(sprites.shirts, x, y, 8, 8)
+            return await cropImage(sprites.shirts, x, y + shirtOffset, 8, 8);
           }
         }
       }
@@ -631,7 +796,7 @@
 
     // Actually fetching the shirt sprite
     if (custom_shirt) {
-      player_shirt_sprite = await cropImage(custom_shirt, 0, 0, 8, 8);
+      player_shirt_sprite = await cropImage(custom_shirt, 0, shirtOffset, 8, 8);
     } else if (shirt_index >= 0 && shirt_index <= 299) {
       player_shirt_sprite = await fetchShirt(shirt_index);
     } else {
@@ -687,11 +852,24 @@
     let pantsRow = Math.ceil((pantsNum + 1) / 10);
     let pantsCol = pantsNum + 1 - 10 * (pantsRow - 1);
 
+    // For cropping the pants sprite based on the player's direction
+    let pantsOffset = 0;
+
+    // Left or right
+    if (player_direction === 1 || player_direction === 3) {
+      pantsOffset = 32;
+    }
+
+    // Backwards
+    if (player_direction === 2) {
+      pantsOffset = 64;
+    }
+
     // Crop the pants sprite
     player_pants_sprite = await cropImage(
       pants_sprite_sheet,
       (pantsCol - 1) * 192,
-      (pantsRow - 1) * 688,
+      (pantsRow - 1) * 688 + pantsOffset,
       16,
       32
     );
@@ -708,6 +886,11 @@
       );
     }
 
+    // Mirror the sprite if the character is facing left
+    if (player_direction === 1) {
+      player_pants_sprite = await mirrorImage(player_pants_sprite);
+    }
+
     // Return the modified pants sprite image
     player_pants = new Image();
     player_pants.src = player_pants_sprite;
@@ -722,7 +905,10 @@
 
     // Filter through the potential options (from the Custom x: fields in the app)
     // Make use of the custom generateSpriteDataUri function from utils.js
-    if (sprite_type === "hair") {
+    if (sprite_type === "base") {
+      custom_base_path = spritePath;
+      custom_base = generateSpriteDataUri(spriteData);
+    } else if (sprite_type === "hair") {
       custom_hair_path = spritePath;
       custom_hair = generateSpriteDataUri(spriteData);
     } else if (sprite_type === "accessory") {
@@ -759,44 +945,6 @@
 
     // Drawing the body
     ctx.drawImage(player_body, 0 + offsetX, 0 + offsetY);
-
-    // Drawing the eyes (notice that it's just two coloured rectangles)
-    ctx.fillStyle = eye_colour;
-    ctx.fillRect(6 + offsetX, 12 + offsetY, 1, 2);
-    ctx.fillRect(9 + offsetX, 12 + offsetY, 1, 2);
-
-    // Drawing the shoes
-    const bootsOffsetX = 7;
-    const bootsOffsetY = 28;
-
-    // This is why custom shoes don't work (yet)
-    // It's all nearly hand-drawn based on the default sprite
-    ctx.fillStyle = player_shoecolours[0];
-    // Darkest colour
-    ctx.fillRect(1 + bootsOffsetX, 0 + bootsOffsetY, 1, 3);
-    ctx.fillRect(0 + bootsOffsetX, 3 + bootsOffsetY, 1, 2);
-    ctx.fillRect(1 + bootsOffsetX, 4 + bootsOffsetY, 2, 1);
-    ctx.fillRect(3 + bootsOffsetX, 3 + bootsOffsetY, 1, 1);
-    ctx.fillRect(4 + bootsOffsetX, 0 + bootsOffsetY, 2, 3);
-    ctx.fillRect(8 + bootsOffsetX, 0 + bootsOffsetY, 1, 3);
-    ctx.fillRect(6 + bootsOffsetX, 3 + bootsOffsetY, 1, 1);
-    ctx.fillRect(7 + bootsOffsetX, 4 + bootsOffsetY, 3, 1);
-    ctx.fillRect(9 + bootsOffsetX, 3 + bootsOffsetY, 1, 1);
-
-    ctx.fillStyle = player_shoecolours[1];
-    // Second-darkest colour
-    ctx.fillRect(3 + bootsOffsetX, 1 + bootsOffsetY, 1, 2);
-    ctx.fillRect(6 + bootsOffsetX, 1 + bootsOffsetY, 1, 2);
-
-    ctx.fillStyle = player_shoecolours[2];
-    // Second-lightest colour
-    ctx.fillRect(2 + bootsOffsetX, 1 + bootsOffsetY, 1, 3);
-    ctx.fillRect(7 + bootsOffsetX, 1 + bootsOffsetY, 1, 3);
-
-    ctx.fillStyle = player_shoecolours[3];
-    // Lightest colour
-    ctx.fillRect(1 + bootsOffsetX, 3 + bootsOffsetY, 1, 1);
-    ctx.fillRect(8 + bootsOffsetX, 3 + bootsOffsetY, 1, 1);
 
     // Draw the pants
     ctx.drawImage(player_pants, 0 + offsetX, 0 + offsetY);
@@ -909,7 +1057,7 @@
               <Column
                 style="display: flex; flex-flow: column nowrap; justify-content: center; gap: 1rem;"
               >
-              <!-- Note how "removing" something is just setting its index equal to "-1" -->
+                <!-- Note how "removing" something is just setting its index equal to "-1" -->
                 <button
                   disabled={progress_bar_index < 1 ||
                     !content_path ||
@@ -962,14 +1110,41 @@
               {#if drawing_player}
                 <Loading />
               {/if}
-            </section></Column
-          >
+              <div class="direction--selector">
+                <!-- The player direction selector box; yeah, there's probably a better way to do the placeholder -->
+                <ComboBox
+                  titleText="Direction"
+                  direction="top"
+                  size="sm"
+                  disabled={!content_path}
+                  placeholder={player_direction === 0
+                    ? "Forwards"
+                    : player_direction === 1
+                    ? "Left"
+                    : player_direction === 2
+                    ? "Right"
+                    : player_direction === 3
+                    ? "Backwards"
+                    : ""}
+                  items={[
+                    { id: "0", text: "Forwards" },
+                    { id: "1", text: "Left" },
+                    { id: "2", text: "Backwards" },
+                    { id: "3", text: "Right" },
+                  ]}
+                  on:select={(event) => {
+                    player_direction = event.detail.selectedIndex;
+                  }}
+                />
+              </div>
+            </section>
+          </Column>
         </Row>
       </div>
     </section>
 
     <Row>
-          <!-- The sliders -->
+      <!-- The sliders -->
       <div class="sliders--wrapper">
         <section class="sliders">
           <!-- Note how the min, max, and disabled props work -->
@@ -981,7 +1156,7 @@
             value={skin_colour_index}
             on:change={(event) => (skin_colour_index = event.detail)}
           />
-<!-- Also note how the on:change function works; pretty simple really -->
+          <!-- Also note how the on:change function works; pretty simple really -->
           <Slider
             disabled={progress_bar_index < 1 || !content_path}
             labelText="Shoe Colour"
@@ -1021,21 +1196,21 @@
           />
 
           <Slider
-            disabled={progress_bar_index < 1 || !content_path || custom_shirt}
-            labelText="Shirt Index"
-            min={-1}
-            max={299}
-            value={shirt_index}
-            on:change={(event) => (shirt_index = event.detail)}
-          />
-
-          <Slider
             disabled={progress_bar_index < 1 || !content_path || custom_pants}
             labelText="Pants Index"
             min={-1}
             max={15}
             value={pants_index}
             on:change={(event) => (pants_index = event.detail)}
+          />
+
+          <Slider
+            disabled={progress_bar_index < 1 || !content_path || custom_shirt}
+            labelText="Shirt Index"
+            min={-1}
+            max={299}
+            value={shirt_index}
+            on:change={(event) => (shirt_index = event.detail)}
           />
         </section>
       </div>
@@ -1048,10 +1223,38 @@
             <TextInput
               size="sm"
               disabled
+              value={custom_base_path ? custom_base_path : ""}
+              labelText="Custom Base:"
+            />
+            <!-- Kinda jank way of making the buttons work side-by-side, but it looks presentable -->
+            <div class="button">
+              <Button
+                size="small"
+                disabled={progress_bar_index < 1 || !content_path}
+                iconDescription="Browse"
+                icon={WatsonHealthHangingProtocol32}
+                on:click={() => uploadSprite("base")}
+              />
+              <Button
+                size="small"
+                kind="danger-tertiary"
+                iconDescription="Remove Custom Base"
+                disabled={!custom_base_path}
+                icon={TrashCan32}
+                on:click={() => {
+                  custom_base = false;
+                  custom_base_path = "";
+                }}
+              />
+            </div>
+          </Row>
+          <Row>
+            <TextInput
+              size="sm"
+              disabled
               value={custom_hair_path ? custom_hair_path : ""}
               labelText="Custom Hair:"
             />
-            <!-- Kinda jank way of making the buttons work side-by-side, but it looks presentable -->
             <div class="button">
               <Button
                 size="small"
@@ -1405,8 +1608,7 @@
     align-items: center;
     height: 100%;
     width: 100%;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
+    margin-bottom: 2rem;
   }
 
   /* Custom button implementation; not too impressive but it does the job */
@@ -1487,6 +1689,12 @@
     justify-content: center;
   }
 
+  /* The selector box for the direction the player is facing */
+  .direction--selector {
+    margin: 0;
+    padding: 0;
+  }
+
   /* The wrapper for the "Custom X:" inputs */
   .custom--content {
     display: flex;
@@ -1531,6 +1739,7 @@
     margin-top: 1rem;
     margin-bottom: 1rem;
     gap: 2rem;
+    max-width: 800px;
   }
 
   .sliders--wrapper {
@@ -1540,11 +1749,17 @@
     align-items: center;
     margin-left: 0.25rem;
     margin-right: 1rem;
+    width: 100%;
   }
 
   /* A couple global styles */
   :global(.bx--slider-container) {
     width: 100%;
+  }
+
+  /* Fixes the direction selector's arrow somehow */
+  :global(.bx--list-box__menu-icon) {
+    transform: translateY(-25%);
   }
 
   :global(html) {

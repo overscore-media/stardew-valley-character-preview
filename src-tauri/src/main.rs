@@ -61,6 +61,36 @@ pub fn skin_colour_swap(pixel: Rgba<u8>, colour_1: CssColor, colour_2: CssColor,
   }
 }
 
+// Very similar to above but for shoe colours
+pub fn shoe_colour_swap(pixel: Rgba<u8>, colour_1: CssColor, colour_2: CssColor, colour_3: CssColor, colour_4: CssColor) -> Rgba<u8> {
+  let default_1 = Rgba([173u8, 71u8, 27u8, 255u8]);
+  let default_2 = Rgba([119u8, 41u8, 26u8, 255u8]);
+  let default_3 = Rgba([91u8, 31u8, 36u8, 255u8]);
+  let default_4 = Rgba([61u8, 17u8, 35u8, 255u8]);
+
+  if pixel.eq(&default_1) {
+    Rgba([colour_1.r, colour_1.g, colour_1.b, (colour_1.a * 255f32) as u8])
+  } else if pixel.eq(&default_2) {
+    Rgba([colour_2.r, colour_2.g, colour_2.b, (colour_2.a * 255f32) as u8])
+  } else if pixel.eq(&default_3) {
+    Rgba([colour_3.r, colour_3.g, colour_3.b, (colour_3.a * 255f32) as u8])
+  } else if pixel.eq(&default_4) {
+    Rgba([colour_4.r, colour_4.g, colour_4.b, (colour_4.a * 255f32) as u8])
+  } else {
+    pixel
+  }
+}
+
+// Similar to above, but for just one colour
+pub fn eye_colour_swap(pixel: Rgba<u8>, colour: CssColor) -> Rgba<u8> {
+  let default = Rgba([104u8, 43u8, 15u8, 255u8]);
+
+  if pixel.eq(&default) {
+    Rgba([colour.r, colour.g, colour.b, (colour.a * 255f32) as u8])
+  } else {
+    pixel
+  }
+}
 // Bring in cmd.rs
 mod cmd;
 
@@ -151,6 +181,43 @@ fn main() {
           error,
         ),
 
+        // For obtaining "left-facing" sprites from "right-facing" ones
+        MirrorImage { image, callback, error } => tauri::execute_promise(_webview, move || {
+          // Turn the base64-encoded image string from JS into a vector of integers
+          let image_string = String::from(&image);
+          let image_decoded = base64::decode(&image_string).unwrap();
+
+          // Load the u8 vector above into a DynamicImage-type variable
+          let mut image_loaded = image::load_from_memory(&image_decoded).unwrap();
+
+          // Call the image library's flip_horizontal function on the image
+          image::imageops::flip_horizontal_in_place(&mut image_loaded);
+
+          // Write the mirrored DynamicImage to a buffer, somehow, and convert it back to a base64 string
+          let mut write_buffer = vec![];
+          image_loaded.write_to(&mut write_buffer, image::ImageOutputFormat::Png).unwrap();
+          let image_encoded = base64::encode(&write_buffer);
+
+          // If the encoded string exists, return it; otherwise, throw an error
+          if image_encoded.len() > 0 {
+            let image_processed = &image_encoded;
+
+            let response = CmdResponse {
+              value: image_processed.to_string(),
+              callback: "callback".to_string(),
+              error: "error".to_string()
+            };
+
+            Ok(response)
+        } else {
+          Err(CommandError::new("could not read image").into())
+        }
+
+        },
+        callback,
+        error,
+      ),
+
         // Swap the skin colours of a body/arms sprite image
         SwapSkinColours { image, new_colours, callback, error } => tauri::execute_promise(_webview, move || {
           let image_string = String::from(&image);
@@ -191,6 +258,85 @@ fn main() {
         callback,
         error,
       ),
+              // Swap the shoe colours of a body sprite image
+              SwapShoeColours { image, new_colours, callback, error } => tauri::execute_promise(_webview, move || {
+                let image_string = String::from(&image);
+                let image_decoded = base64::decode(&image_string).unwrap();
+                let image_loaded = image::load_from_memory(&image_decoded).unwrap();
+                let image_rgba = image_loaded.to_rgba8();
+      
+                // Turning the colours vector into CssColor's
+                let colour_1 = new_colours[3].parse::<CssColor>().unwrap();
+                let colour_2 = new_colours[2].parse::<CssColor>().unwrap();
+                let colour_3 = new_colours[1].parse::<CssColor>().unwrap();
+                let colour_4 = new_colours[0].parse::<CssColor>().unwrap();
+      
+                // Run the skin_colour_swap function on each pixel then convert the result to a DynamicImage
+                let image_colour_swapped = map_colors(&image_rgba, |pix| shoe_colour_swap(pix, colour_1, colour_2, colour_3, colour_4));
+                let image_swapped_dynamic = DynamicImage::ImageRgba8(image_colour_swapped);
+      
+                // Write the new Dynamic image to a buffer, and base64 encode it
+                let mut write_buffer = vec![];
+                image_swapped_dynamic.write_to(&mut write_buffer, image::ImageOutputFormat::Png).unwrap();
+                let image_encoded = base64::encode(&write_buffer);
+      
+                // Send it off or throw an error
+                if image_encoded.len() > 0 {
+                  let image_processed = &image_encoded;
+      
+                  let response = CmdResponse {
+                    value: image_processed.to_string(),
+                    callback: "callback".to_string(),
+                    error: "error".to_string()
+                  };
+      
+                  Ok(response)
+                } else {
+                  Err(CommandError::new("could not read image").into())
+                }
+      
+              },
+              callback,
+              error,
+            ),
+            // Swap the eye colours of a body sprite image
+            SwapEyeColour { image, new_colour, callback, error } => tauri::execute_promise(_webview, move || {
+              let image_string = String::from(&image);
+              let image_decoded = base64::decode(&image_string).unwrap();
+              let image_loaded = image::load_from_memory(&image_decoded).unwrap();
+              let image_rgba = image_loaded.to_rgba8();
+    
+              // Turning the colour vector into a CssColor
+              let colour = new_colour.parse::<CssColor>().unwrap();
+    
+              // Run the skin_colour_swap function on each pixel then convert the result to a DynamicImage
+              let image_colour_swapped = map_colors(&image_rgba, |pix| eye_colour_swap(pix, colour));
+              let image_swapped_dynamic = DynamicImage::ImageRgba8(image_colour_swapped);
+    
+              // Write the new Dynamic image to a buffer, and base64 encode it
+              let mut write_buffer = vec![];
+              image_swapped_dynamic.write_to(&mut write_buffer, image::ImageOutputFormat::Png).unwrap();
+              let image_encoded = base64::encode(&write_buffer);
+    
+              // Send it off or throw an error
+              if image_encoded.len() > 0 {
+                let image_processed = &image_encoded;
+    
+                let response = CmdResponse {
+                  value: image_processed.to_string(),
+                  callback: "callback".to_string(),
+                  error: "error".to_string()
+                };
+    
+                Ok(response)
+              } else {
+                Err(CommandError::new("could not read image").into())
+              }
+    
+            },
+            callback,
+            error,
+          ),
           }
           Ok(())
         }

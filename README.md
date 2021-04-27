@@ -15,12 +15,13 @@ It will probably work on any Windows 10 computer with Edge installed, or a moder
   - Import sprites for custom content (hair, accessory, hats, shirt, pants) from .PNG files (compatible with [JSON Assets](https://github.com/spacechase0/JsonAssets) files)
   - Change colours of items (shoes, hair, skin, shirt, pants)
   - Choose from the vanilla hats, shirts, pants, accessories, hairstyles
+  - Lets you choose your character base sprite
+  - Lets you select a direction for your character to face
   - Save your character preview as a .PNG (right-click, "Save Image As")
 
 #### Stuff it Doesn't Do:
   - Write to or modify your savefile in any way
-  - Display different character poses (only from the front; poses might be added in the future)
-  - Allow you to change the base sprite or use custom shoes (might change in the future)
+  - Let you change your character pose (other than the direction they're facing) or animate them
   
 #### Credits:
 
@@ -60,6 +61,8 @@ You can change your character's skin colour, shoe colour, hair, accessory, hat, 
 
 Note that "-1" means "no hat/accessory" and "0" means the first in the list.
 
+**Also note that hair will not change based on your hat, so you might want to switch to a "hat-friendly" hairstyle if your character has a hat. See [https://stardewvalleywiki.com/Modding:Farmer_sprite](https://stardewvalleywiki.com/Modding:Farmer_sprite) for more info.**
+
 ##### Custom Content:
 
 Click on the hanger icon to the left of the "Custom x:" fields at the bottom of the window (you may have to scroll down
@@ -71,6 +74,10 @@ pose will be used, the entire spritesheet must be given to SVCP (for future-proo
 Note that if you load in a spritesheet with multiple hats/shirts/etc., only the one in the top-left will be loaded in.
 
 You can use a program like [Paint.NET](https://www.getpaint.net/) to edit a spritesheet to get the single sprite you want.
+
+##### Base Sprite:
+
+*At least 16 x 96 for four base poses* (note that arms will be the default base sprite if your custom base sprite is 96 or under in width)
 
 ###### Hair:
 
@@ -103,7 +110,10 @@ at its top-right (not the "X" to close the SVCP window, though) to close the dia
 **After changing any attributes of your character preview, you will need to press the "Draw Character" button again to regenerate the preview**
 
 #### Known Issues:
-  - Certain shirt indices don't render properly; there is really no way around that at the moment.
+  - Certain shirt indices aren't actually used in-game, so if selected the sprite will be broken/non-existent.
+  - The pants directional sprites are... probably correct. It's hard to tell because the pants spritesheets are big and rather complicated.
+  - Sometimes the tinting function messes with transparencies. Sometimes; hard to tell how/why.
+  - Once you select a colour for something, you can't "unselect" or revert it (other than resetting your character)
 
 #### Troubleshooting:
   - If in doubt, or if the loading circle won't go away, close and re-open the window, or press F5 to refresh the window (if available).
