@@ -26,8 +26,8 @@
       "externalBin": [],
       "copyright": "",
       "category": "DeveloperTool",
-      "shortDescription": "",
-      "longDescription": "",
+      "shortDescription": "Stardew Kisekae for your desktop",
+      "longDescription": "Think of it as a sort of standalone Kisekae application for Stardew Valley characters. SVCP loads your character's attributes from your savefile, and you can play around with different outfits, colours, and accessories.",
       "deb": {
         "depends": [],
         "useBootstrapper": false

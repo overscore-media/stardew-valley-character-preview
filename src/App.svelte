@@ -44,7 +44,7 @@
   let player;
 
   // The direction the player is facing [0: Forwards, 1: Left, 2: Backwards, 3: Right]
-  let player_direction = 1;
+  let player_direction = 0;
 
   // The object that will hold the sprites loaded from the unpacked content folder
   let sprites = {};
@@ -1502,7 +1502,18 @@
                 icon={ColorPalette32}
                 on:click={() => (shirt_colour_modal = true)}
               />
+              <Button
+              size="small"
+              kind="danger-tertiary"
+              iconDescription="Remove Shirt Colour"
+              disabled={progress_bar_index < 1 || !content_path || !shirt_colour}
+              icon={TrashCan32}
+              on:click={() => {
+                shirt_colour = "";
+              }}
+            />
             </div>
+
           </Row>
 
           <Modal
@@ -1543,6 +1554,16 @@
                 icon={ColorPalette32}
                 on:click={() => (pants_colour_modal = true)}
               />
+              <Button
+              size="small"
+              kind="danger-tertiary"
+              iconDescription="Remove Pants Colour"
+              disabled={progress_bar_index < 1 || !content_path || !pants_colour}
+              icon={TrashCan32}
+              on:click={() => {
+                pants_colour = "";
+              }}
+            />
             </div>
           </Row>
 

@@ -28,7 +28,10 @@ It will probably work on any Windows 10 computer with Edge installed, or a moder
 #### Credits:
 
 [Stardew Valley](https://www.stardewvalley.net/) is the property of ConcernedApe LLC.
-Preview screenshot uses custom content from [contrarequiallas' Kitsune Masks](https://www.nexusmods.com/stardewvalley/mods/2570) and [Lumisteria Clothes](https://www.nexusmods.com/stardewvalley/mods/5760).
+Preview screenshot uses custom content from [contrarequiallas' Kitsune Masks](https://www.nexusmods.com/stardewvalley/mods/2570) and from [Lumisteria Clothes](https://www.nexusmods.com/stardewvalley/mods/5760). 
+
+Font used in the logo is from [https://www.reddit.com/r/StardewValley/comments/4dtgp7/by_popular_request_a_stardew_valley_font_for_your/](https://www.reddit.com/r/StardewValley/comments/4dtgp7/by_popular_request_a_stardew_valley_font_for_your/)
+
 Project inspired by the awesome community of Stardew Valley players and modders.
 
 #### Basic Instructions:
@@ -103,19 +106,18 @@ You can use a program like [Paint.NET](https://www.getpaint.net/) to edit a spri
 
 ##### Changing Colours:
 
-Click on any of the palette icons on the colour fields at the bottom of the window to change the colour of your character's
-shirt, pants, hair, or eyes.
+Click on any of the palette icons on the colour fields at the bottom of the window to change the colour of your character's shirt, pants, hair, or eyes.
 
-When the dialog pops up, use the provided colour picker to select a colour, then click outside the dialog or click the "x" button
-at its top-right (not the "X" to close the SVCP window, though) to close the dialog and ratify your colour selection.
+When the dialog pops up, use the provided colour picker to select a colour, then click outside the dialog or click the "x" button at its top-right (not the "X" to close the SVCP window, though) to close the dialog and ratify your colour selection.
 
 **After changing any attributes of your character preview, you will need to press the "Draw Character" button again to regenerate the preview**
+
+*You can remove the shirt and/or pants colour to revert your character to the default colour of whatever shirt/pants they're wearing*
 
 #### Known Issues:
   - Certain shirt indices aren't actually used in-game, so if selected the sprite will be broken/non-existent.
   - The pants directional sprites are... probably correct. It's hard to tell because the pants spritesheets are big and rather complicated.
   - Sometimes the tinting function messes with transparencies. Sometimes; hard to tell how/why.
-  - Once you select a colour for something, you can't "unselect" or revert it (other than resetting your character)
 
 #### Troubleshooting:
   - If in doubt, or if the loading circle won't go away, close and re-open the window, or press F5 to refresh the window (if available).
