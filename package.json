@@ -10,33 +10,33 @@
     "tauri-build": "tauri build"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-commonjs": "^19.0.1",
     "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^11.0.0",
-    "carbon-components": "^10.32.0",
-    "carbon-components-svelte": "^0.31.1",
-    "eslint": "^7.23.0",
-    "eslint-plugin-svelte3": "^3.1.2",
-    "postcss": "^8.2.9",
-    "rollup": "^2.3.4",
+    "@rollup/plugin-node-resolve": "^13.0.3",
+    "carbon-components": "^10.40.0",
+    "carbon-components-svelte": "^0.42.0",
+    "eslint": "^7.31.0",
+    "eslint-plugin-svelte3": "^3.2.0",
+    "postcss": "^8.3.6",
+    "rollup": "^2.53.3",
     "rollup-plugin-css-only": "^3.1.0",
-    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-globals": "^1.4.0",
-    "rollup-plugin-svelte": "^7.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "sass": "^1.32.8",
-    "svelte": "^3.0.0",
-    "svelte-preprocess": "^4.7.0"
+    "rollup-plugin-svelte": "^7.1.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "sass": "^1.36.0",
+    "svelte": "^3.40.2",
+    "svelte-preprocess": "^4.7.4"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.0.0-beta.5",
     "@tauri-apps/cli": "^1.0.0-beta.6",
     "bignumber.js": "^9.0.1",
-    "chroma-js": "^2.1.1",
-    "js-base64": "^3.6.0",
-    "sirv-cli": "^1.0.0",
-    "txml": "^4.0.1",
-    "vanilla-colorful": "^0.5.3"
+    "chroma-js": "^2.1.2",
+    "js-base64": "^3.6.1",
+    "sirv-cli": "^1.0.12",
+    "txml": "^5.0.0",
+    "vanilla-colorful": "^0.6.1"
   }
 }
