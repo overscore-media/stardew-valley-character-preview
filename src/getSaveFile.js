@@ -1,20 +1,23 @@
 import txml from "txml";
 import BigNumber from "bignumber.js";
 
+import { open as openDialog } from '@tauri-apps/api/dialog'
+import { readTextFile } from '@tauri-apps/api/fs'
+
 export async function getSaveFile(current_path) {
   let saveFilePath;
   // Because for some reason the first dialog opened has an error
   let comError = false;
 
   if (!current_path) {
-    saveFilePath = await window.__TAURI__.dialog.open().catch((err) => {
+    saveFilePath = await openDialog().catch((err) => {
       if (err === "Could not initialize COM.") {
         comError = true;
       }
     });
 
     if (comError) {
-      saveFilePath = await window.__TAURI__.dialog.open();
+      saveFilePath = await openDialog();
       comError = false;
     }
   } else {
@@ -22,7 +25,7 @@ export async function getSaveFile(current_path) {
   }
 
   // Read the file from the path the dialog (or current_path) gave
-  const saveFileXML = await window.__TAURI__.fs.readTextFile(saveFilePath);
+  const saveFileXML = await readTextFile(saveFilePath);
   // Parse out the savefile; look for the "SaveGame" section
   const saveFile = filterParsedXML(txml.parse(saveFileXML), "SaveGame");
   // Get the "player" attribute from the savefile

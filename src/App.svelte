@@ -40,6 +40,9 @@
   import TrashCan32 from "carbon-icons-svelte/lib/TrashCan32";
   import ColorPalette32 from "carbon-icons-svelte/lib/ColorPalette32";
 
+  // For handling dialog windows
+  import { open as openDialog } from '@tauri-apps/api/dialog'
+
   // The player object which will be filled with data from the savefile
   let player;
 
@@ -176,7 +179,7 @@
   async function getContent(event) {
     // If the existing path is not being used, open a dialog to get a new one
     if (event !== "use_existing_path") {
-      content_path = await window.__TAURI__.dialog.open({ directory: true });
+      content_path = await openDialog({ directory: true });
     }
 
     // Internal utility function to add a sprite to the global sprites object
@@ -900,7 +903,7 @@
   // Used for processing custom sprites
   async function uploadSprite(sprite_type) {
     // Open a dialog and fetch the content at the path provided
-    const spritePath = await window.__TAURI__.dialog.open();
+    const spritePath = await openDialog();
     const spriteData = await fetchContent(spritePath);
 
     // Filter through the potential options (from the Custom x: fields in the app)

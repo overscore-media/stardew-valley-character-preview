@@ -7,23 +7,22 @@ license = ""
 repository = "https://github.com/overscore-media/stardew-valley-character-preview"
 default-run = "stardew-valley-character-preview"
 edition = "2018"
-build = "src/build.rs"
 
 [dependencies]
 serde_json = "1.0.64"
 serde = { version = "1.0.125", features = [ "derive" ] }
-tauri = { version = "0.11.1", features = [ "all-api" ] }
+tauri = {version = "1.0.0-beta.5",features = ["api-all"] }
 base64 = "0.13.0"
 image = "0.23.14"
 imageproc = "0.22.0"
 css-color-parser = "0.1.2"
 
-[target."cfg(windows)".build-dependencies]
-winres = "0.1.11"
+[build-dependencies]
+tauri-build = "1.0.0-beta.3"
 
 [features]
-embedded-server = [ "tauri/embedded-server" ]
-no-server = [ "tauri/no-server" ]
+default = [ "custom-protocol" ]
+custom-protocol = [ "tauri/custom-protocol" ]
 
 [[bin]]
 name = "stardew-valley-character-preview"

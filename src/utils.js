@@ -1,10 +1,12 @@
 import { Base64 } from "js-base64";
 
+import { invoke } from '@tauri-apps/api/tauri'
+import { readBinaryFile } from '@tauri-apps/api/fs'
+
 // Crops an image; relies on calling the Tauri backend
 export async function cropImage(imageBase64, x, y, width, height) {
-  let croppedImage = window.__TAURI__.tauri
-    .promisified({
-      cmd: "crop",
+  let croppedImage = invoke('crop_image',
+    {
       // Because the Rust base64 library doesn't like the
       // "data:image/png;base64," part; it's added back below
       image: imageBase64.substring(22),
@@ -26,8 +28,8 @@ export async function cropImage(imageBase64, x, y, width, height) {
 // Generic utility for flipping an image horizontally
 // (for obtaining "left" sprites from "right" ones)
 export async function mirrorImage(imageBase64) {
-  let mirrored_image = window.__TAURI__.tauri.promisified({
-    cmd: "mirrorImage",
+  let mirrored_image = invoke('mirror_image', 
+  {
     image: imageBase64.substring(22)
   })
   .then((response) => {
@@ -42,9 +44,8 @@ export async function mirrorImage(imageBase64) {
 
 // Image tinter; a similar implementation as with the crop function
 export async function tintImage(imageBase64, r, g, b) {
-  let tintedImage = window.__TAURI__.tauri
-    .promisified({
-      cmd: "tint",
+  let tintedImage = invoke('tint_image', 
+  {
       image: imageBase64.substring(22),
       r: r,
       g: g,
@@ -62,9 +63,8 @@ export async function tintImage(imageBase64, r, g, b) {
 
 // Swapping the skin colours; for body and arms sprites
 export async function swapSkinColours(imageBase64, new_colours) {
-  let swapped_image = window.__TAURI__.tauri
-    .promisified({
-      cmd: "swapSkinColours",
+  let swapped_image = invoke('swap_skin_colours', 
+    {
       image: imageBase64.substring(22),
       new_colours: new_colours,
     })
@@ -80,9 +80,7 @@ export async function swapSkinColours(imageBase64, new_colours) {
 
 // Swapping the shoe colours; for the body sprite
 export async function swapShoeColours(imageBase64, new_colours) {
-  let swapped_image = window.__TAURI__.tauri
-    .promisified({
-      cmd: "swapShoeColours",
+  let swapped_image = invoke('swap_shoe_colours', {
       image: imageBase64.substring(22),
       new_colours: new_colours,
     })
@@ -98,9 +96,8 @@ export async function swapShoeColours(imageBase64, new_colours) {
 
 // Swapping the eye colour
 export async function swapEyeColour(imageBase64, new_colour) {
-  let swapped_image = window.__TAURI__.tauri
-    .promisified({
-      cmd: "swapEyeColour",
+  let swapped_image = invoke('swap_eye_colour', 
+  {
       image: imageBase64.substring(22),
       new_colour: new_colour,
     })
@@ -125,5 +122,5 @@ export function generateSpriteDataUri(spriteBinaryArray) {
 
 // Basically an easier way of reading a binary (i.e. not text) file
 export async function fetchContent(path) {
-  return await window.__TAURI__.fs.readBinaryFile(path);
+  return await readBinaryFile(path);
 }

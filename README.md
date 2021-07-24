@@ -157,3 +157,18 @@ Tauri's Rust bundler should be installed, along with its pre-reqs for your setup
 #### About OverScore Media
 
 OverScore Media is a distributed software, web, and digital design agency that operates in Peterborough, Ontario. We're always looking for passionate creators to join our team, and we offer free, comprehensive consultations for all projects. Visit our website at [overscore.media](https://overscore.media) for more information about our services.
+
+---
+
+#### TODO:
+
+**Integrate Self-Updater:**
+  - https://tauri.studio/en/docs/usage/guides/updater
+
+**Frameless Window**
+
+**Better/more-reliable GitHub Actions build automation**
+
+**Replace the UI with Tailwind.CSS**
+
+**Better image saving mechanism**
