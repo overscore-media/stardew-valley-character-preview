@@ -806,7 +806,7 @@
 
     // Actually fetching the shirt sprite
     if (custom_shirt) {
-      player_shirt_sprite = await cropImage(custom_shirt, 0, shirtOffset, 8, 8);
+      player_shirt_sprite = await cropImage(custom_shirt, 0, 0, 8, 8);
     } else if (shirt_index >= 0 && shirt_index <= 299) {
       player_shirt_sprite = await fetchShirt(shirt_index);
     } else {

@@ -1,9 +1,13 @@
 # Modified from https://github.com/tauri-apps/tauri-action
 name: "Build for Release"
 
-on:
-  release:
-    types: [created]
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   publish-tauri:
@@ -23,11 +27,13 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
-    - name: Install webkit2gtk (ubuntu only)
+    - name: Ubuntu-only stuff
       if: matrix.platform == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y webkit2gtk-4.0
+        sudo apt-get install -y webkit2gtk-4.0 jq
+        # Overwrite tauri.conf.json so the only icons listed are PNGs, to make the build work on Ubuntu
+        cat .\src-tauri\tauri.conf.json | jq '.tauri.bundle.icon = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png"]' | tee ./src-tauri/tauri.conf.json > /dev/null
     - name: Install Node dependencies
       run: |
         yarn

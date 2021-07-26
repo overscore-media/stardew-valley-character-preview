@@ -172,3 +172,5 @@ OverScore Media is a distributed software, web, and digital design agency that o
 **Replace the UI with Tailwind.CSS**
 
 **Better image saving mechanism**
+
+**Tauri and Svelte testing (unit, E2E, integration)**
