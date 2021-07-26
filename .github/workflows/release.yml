@@ -33,7 +33,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y webkit2gtk-4.0 jq
         # Overwrite tauri.conf.json so the only icons listed are PNGs, to make the build work on Ubuntu
-        cat .\src-tauri\tauri.conf.json | jq '.tauri.bundle.icon = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png"]' | tee ./src-tauri/tauri.conf.json > /dev/null
+        cat src-tauri\tauri.conf.json | jq '.tauri.bundle.icon = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png"]' | tee src-tauri/tauri.conf.json > /dev/null
     - name: Install Node dependencies
       run: |
         yarn
