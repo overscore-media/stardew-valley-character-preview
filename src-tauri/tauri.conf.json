@@ -10,7 +10,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "OverScore Media",
+      "identifier": "ca.overscore.svcp",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -23,7 +23,7 @@
       "copyright": "",
       "category": "DeveloperTool",
       "shortDescription": "Stardew Kisekae for your desktop",
-      "longDescription": "Think of it as a sort of standalone Kisekae application for Stardew Valley characters. SVCP loads your character's attributes from your savefile, and you can play around with different outfits, colours, and accessories.",
+      "longDescription": "A standalone Kisekae application for Stardew Valley characters. SVCP loads your character's attributes from your savefile, and you can play around with different outfits, colours, and accessories.",
       "deb": {
         "depends": [],
         "useBootstrapper": false
