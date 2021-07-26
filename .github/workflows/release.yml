@@ -18,7 +18,7 @@ jobs:
     - name: setup node
       uses: actions/setup-node@v1
       with:
-        node-version: 14
+        node-version: 16
     - name: Install Rust nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -28,9 +28,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y webkit2gtk-4.0
-    - name: Install app dependencies and build it
+    - name: Install Node dependencies
       run: |
-        yarn && yarn tauri build
+        yarn
     - uses: tauri-apps/tauri-action@v0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
