@@ -40,8 +40,15 @@
   import TrashCan32 from "carbon-icons-svelte/lib/TrashCan32";
   import ColorPalette32 from "carbon-icons-svelte/lib/ColorPalette32";
 
+  import ChevronDown32 from "carbon-icons-svelte/lib/ChevronDown32";
+  import ChevronUp32 from "carbon-icons-svelte/lib/ChevronUp32";
+  import Close32 from "carbon-icons-svelte/lib/Close32";
+
   // For handling dialog windows
   import { open as openDialog } from '@tauri-apps/api/dialog'
+
+  // For handling titlebar interactivity
+  import { appWindow } from '@tauri-apps/api/window'
 
   // The player object which will be filled with data from the savefile
   let player;
@@ -975,6 +982,27 @@
   // Sets the Carbon UI theme to full dark
   $: document.documentElement.setAttribute("theme", "g100");
 </script>
+
+<div data-tauri-drag-region class="titlebar">
+  <span>Stardew Valley Character Preview</span>
+  <div class="titlebar-buttons">
+  <div class="titlebar-button" on:click={() => appWindow.minimize()}>
+    <ChevronDown32>
+      <title>Minimize Window</title>
+    </ChevronDown32>
+  </div>
+  <div class="titlebar-button" on:click={async (e) => { await appWindow.isMaximized() ? appWindow.unmaximmize() : appWindow.maximize() } }>
+    <ChevronUp32>
+      <title>Maximize Window</title>
+    </ChevronUp32>
+  </div>
+  <div class="titlebar-button" on:click={() => appWindow.close()}>
+    <Close32>
+      <title>Close Window</title>
+    </Close32>
+  </div>
+</div>
+</div>
 
 <main>
   <Grid>

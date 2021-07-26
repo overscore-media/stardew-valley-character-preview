@@ -66,7 +66,7 @@ export async function swapSkinColours(imageBase64, new_colours) {
   let swapped_image = invoke('swap_skin_colours', 
     {
       image: imageBase64.substring(22),
-      new_colours: new_colours,
+      newColours: new_colours,
     })
     .then((response) => {
       return `data:image/png;base64,${response.value}`;
@@ -82,7 +82,7 @@ export async function swapSkinColours(imageBase64, new_colours) {
 export async function swapShoeColours(imageBase64, new_colours) {
   let swapped_image = invoke('swap_shoe_colours', {
       image: imageBase64.substring(22),
-      new_colours: new_colours,
+      newColours: new_colours,
     })
     .then((response) => {
       return `data:image/png;base64,${response.value}`;
@@ -99,7 +99,7 @@ export async function swapEyeColour(imageBase64, new_colour) {
   let swapped_image = invoke('swap_eye_colour', 
   {
       image: imageBase64.substring(22),
-      new_colour: new_colour,
+      newColour: new_colour,
     })
     .then((response) => {
       return `data:image/png;base64,${response.value}`;

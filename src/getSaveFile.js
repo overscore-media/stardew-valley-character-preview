@@ -1,4 +1,4 @@
-import txml from "txml";
+import { parse as parseXML } from 'txml';
 import BigNumber from "bignumber.js";
 
 import { open as openDialog } from '@tauri-apps/api/dialog'
@@ -27,7 +27,7 @@ export async function getSaveFile(current_path) {
   // Read the file from the path the dialog (or current_path) gave
   const saveFileXML = await readTextFile(saveFilePath);
   // Parse out the savefile; look for the "SaveGame" section
-  const saveFile = filterParsedXML(txml.parse(saveFileXML), "SaveGame");
+  const saveFile = filterParsedXML(parseXML(saveFileXML), "SaveGame");
   // Get the "player" attribute from the savefile
   const player = saveFile.player;
 

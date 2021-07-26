@@ -165,7 +165,7 @@ OverScore Media is a distributed software, web, and digital design agency that o
 **Integrate Self-Updater:**
   - https://tauri.studio/en/docs/usage/guides/updater
 
-**Frameless Window**
+**Allow the maximize button to un-maximize**
 
 **Better/more-reliable GitHub Actions build automation**
 

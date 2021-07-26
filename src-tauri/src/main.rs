@@ -290,12 +290,7 @@ fn swap_eye_colour(image: String, new_colour: String) -> Result<Response<'static
 
 fn main() {
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![crop_image])
-    .invoke_handler(tauri::generate_handler![tint_image])
-    .invoke_handler(tauri::generate_handler![mirror_image])
-    .invoke_handler(tauri::generate_handler![swap_skin_colours])
-    .invoke_handler(tauri::generate_handler![swap_shoe_colours])
-    .invoke_handler(tauri::generate_handler![swap_eye_colour])
+    .invoke_handler(tauri::generate_handler![crop_image, tint_image, mirror_image, swap_skin_colours, swap_shoe_colours, swap_eye_colour])
     .run(tauri::generate_context!())
     .expect("An error occurred while running the application");
 }
